@@ -1,0 +1,10 @@
+In this file, I collect the tasks I am yet to do on the facial recognition demo.
+* finish add face feature
+* write docker send function
+  there should be two functions: one for the evaluate command, other for the
+  retrain command. These functions will do the following:
+  + take their arguments from the function call in the interface
+  + chain them together in one string
+  + send the docker call
+* 
+

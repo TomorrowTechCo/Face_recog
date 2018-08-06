@@ -1,0 +1,17 @@
+# ignore the picture folders
+data/*
+output/*/
+etc/*
+temp/*
+test/*
+
+# ignore various junk
+facenet_reco/show/*
+facenet_reco/temporal/*
+facenet_reco/__pycache__/*
+*.pyc
+
+# more huge files
+lfw.tgz
+facenet_reco/shape_predictor_68_face_landmarks.dat
+output/classifier.pkl

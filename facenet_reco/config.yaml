@@ -1,0 +1,3 @@
+classifier_path: "/facial_recog/output/classifier2.pkl"
+embeddings_path: "/facial_recog/output/embeddings.pkl"
+pictures_path: "/facial_recog/output/beginner/"
