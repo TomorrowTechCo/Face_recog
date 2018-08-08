@@ -4,19 +4,30 @@ from retrain_evaluate import evaluate_face, add_face
 from PIL import Image, ImageTk
 import os
 import shutil
+import yaml
+
 global coordenada_x
+coordenada_x = 0
 global coordenada_y
+coordenada_y = 40
 global foto_actual
 global lista_imagenes
+global texto
+
+with open("config.yaml") as f:
+    conf = yaml.load(f.read())
+
+# Se obtiene el nombre de todas las fotos de la carpeta imShow
 lista_imagenes = os.listdir(
-    "imShow")  # Se obtiene el nombre de todas las fotos de la carpeta imShow
+    conf["lista_imagenes"])
+
+# se elimina el case sensitive
 for i in range(len(lista_imagenes)):
     lista_imagenes[i] = lista_imagenes[
-        i].lower()  # se elimina el case sensitive
+        i].lower()
 
-print(lista_imagenes)
-coordenada_x = 0
-coordenada_y = 40
+# print(lista_imagenes)
+
 # inicializacion de las caracteristicas de la ventana
 raiz = Tk()
 raiz.title("Sistema de detección facial")
@@ -27,40 +38,34 @@ raiz.title("Sistema de detección facial")
 def OpenFile():
 
     textbox.delete('1.0', END)
-    validar = (
-        os.path.isdir("/home/andres/code/facial_recog/temp/sujeto")
-    )  # se valida si existe el directorio (no sirve si no se borran las fotos)
 
+    # se valida si existe el directorio (no sirve si no se borran las fotos)
+    validar = (
+        os.path.isdir(conf['images_dir'])
+    )
     if validar:
-        shutil.rmtree('/home/andres/code/facial_recog/temp/sujeto'
-                      )  # Se elimina el directorio
+        # Se elimina el directorio
+        shutil.rmtree(
+            conf['images_dir']
+        )
     a = os.getcwd()
     print(a)
     name = filedialog.askopenfilename(
-        initialdir="/home/andres/code/facial_recog/output/intermediate"
+        initialdir="../output/intermediate"
     )
+
     # se abre el directorio para seleccionar la foto a reconocer, la variable
     # name corresponde a todo el path con la imagen print(name)
-    nombre_fotoV = name.split(
-        "/"
-    )  # se separa en un vector para despues obtener el nombre de la imagen
-    index_nombre_fotoV = len(
-        nombre_fotoV)  # para obtener el nombre de la foto despues
-    nombre_foto = nombre_fotoV[index_nombre_fotoV -
-                               1]  # se obtiene el nombre de la foto
-    validar2 = (os.path.isdir("/home/andres/code/facial_recog/temp/sujeto")
-                )  # se vuelve a crear el directorio
-    if not validar2:
-        os.makedirs('/home/andres/code/facial_recog/temp/sujeto')
+    # se obtiene el nombre de la foto
+    photo_name = name.split("/")[-1]
+    if not os.path.isdir(conf['images_dir']):
+        os.makedirs(conf['images_dir'])
 
-    destino = "/home/andres/code/facial_recog/temp/sujeto"
-    shutil.copy(name, destino)
+    shutil.copy(name, conf['images_dir'])
 
 
 miFrame = Frame()
 miFrame.pack()
-# []
-global texto
 
 
 # Funcion para adquirir el texto de la informacion de la persona, esta se
@@ -68,9 +73,8 @@ global texto
 def get_text():
     textbox.insert(INSERT, evaluate_face())
     texto = textbox.get("1.0", END + "-2c")  # Se obtiene el texto del textbox
-    texto_espaciosV = texto.split(
-        "\n"
-    )  # Se separa en un arreglo teniendo en cuenta los saltos de línea (la V
+    texto_espaciosV = texto.split("\n")
+    # Se separa en un arreglo teniendo en cuenta los saltos de línea (la V
     # indica que es arreglo)
     texto_nombre_esp = texto_espaciosV[0]
     texto_nombre_puntosV = texto_nombre_esp.split(
@@ -91,8 +95,7 @@ def get_text():
     print(buscar_foto_nombre)
     validar_sujeto = print(buscar_foto_nombre in lista_imagenes)
     # if validar_sujeto==True:
-    img_file = '/home/andres/code/facial_recog/facenet_reco/'
-    'imShow/' + buscar_foto_nombre
+    img_file = 'imShow/' + buscar_foto_nombre
     img_file = img_file.replace(" ", "")
     face_delete.config(image="")
     foto_actual = PhotoImage(file=img_file)
@@ -105,6 +108,7 @@ def get_text():
     nombreSujeto = nombre_sin_guion1 + espacio + nombre_sin_guion2
     # Aqui empieza la obtencion de la probabilidad
     probabilidad = nombre_sin_puntoV[1]
+
     textbox_nombre.configure(
         state='normal'
     )  # se debe settear como normal para poder borrar el contenido anterior
@@ -177,27 +181,26 @@ Label(
     miFrame, text="Estatura: ", font="30").place(
         x=370 + coordenada_x, y=354 + coordenada_y)
 
+
 # boton cargar
 btn = Button(raiz, text="Cargar")
 btn.place(x=100, y=454)
 btn.config(command=OpenFile)
 
-# 65
 
-
-# provisional function to test button
-def provFunc():
-
-    get_text()
+# call the preproccessing script on the pictures in the main folder.
+def preprocess():
+    process_image(askdirectory())
 
 
 # boton reconocer
 btn2 = Button(raiz, text="Reconocer")
 btn2.place(x=262, y=454)
-btn2.config(command=provFunc)
+btn2.config(command=get_text)
+
 # boton pre procesar
 btn3 = Button(raiz, text="Pre procesar")
 btn3.place(x=262, y=494)
-btn3.config(command=provFunc)
+btn3.config(command=preprocess)
 
 raiz.mainloop()

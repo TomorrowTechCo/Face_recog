@@ -6,10 +6,13 @@ temp/*
 test/*
 
 # ignore various junk
-facenet_reco/show/*
+facenet_reco/imShow/*
 facenet_reco/temporal/*
 facenet_reco/__pycache__/*
 *.pyc
+
+# ignore config file so folders can be local
+facenet_reco/config.yaml
 
 # more huge files
 lfw.tgz

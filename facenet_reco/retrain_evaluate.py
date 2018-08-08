@@ -106,6 +106,7 @@ def add_face(input_dir):
         })
     save_config(directory)
 
+
 def process_image(picture="/facial_recog/temp/"):
     """function that takes the pictures from the main folder and preprocesses
     them.
