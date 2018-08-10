@@ -4,6 +4,7 @@ import os
 import pickle
 import sys
 import time
+import yaml
 
 import numpy as np
 import tensorflow as tf
@@ -12,6 +13,9 @@ from tensorflow.python.platform import gfile
 
 from lfw_input import filter_dataset, split_dataset, get_dataset
 from facenet_reco import lfw_input
+
+with open("config.yaml") as f:
+    conf = yaml.load(f.read())
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +28,6 @@ def main(input_directory,
          num_epochs,
          min_images_per_labels,
          split_ratio,
-         embeddings_directory="/facial_recog/output/embeddings.pkl",
          is_train=True):
     """
     Loads images from :param input_dir, creates embeddings using a model
@@ -93,7 +96,7 @@ def main(input_directory,
 
         if is_train:
             _retrain_classifier(emb_array, label_array, class_names,
-                                classifier_filename, embeddings_directory)
+                                classifier_filename)
         else:
             _evaluate_classifier(emb_array, label_array, classifier_filename)
 
@@ -208,14 +211,14 @@ def _create_embeddings(
         pass
 
     # pickle and store the embeddings so we can use them later
-    with open(embeddings_directory, 'wb') as outfile:
+    with open(conf["embeddings_path"], 'wb') as outfile:
         pickle.dump((emb_array, label_array), outfile)
 
     return emb_array, label_array
 
 
 def _train_and_save_classifier(emb_array, label_array, class_names,
-                               classifier_filename_exp, embeddings_directory):
+                               classifier_filename_exp):
     logger.info('Training Classifier')
     model = SVC(kernel='linear', probability=True, verbose=False)
     model.fit(emb_array, label_array)
@@ -229,8 +232,8 @@ def _train_and_save_classifier(emb_array, label_array, class_names,
 # this function takes care of the retraining. It will take the place of the
 # original, for the demo of course.
 def _retrain_classifier(emb_array, label_array, class_names,
-                        classifier_filename_exp, embeddings_directory):
-    with open(embeddings_directory, 'rb') as f:
+                        classifier_filename_exp):
+    with open(conf["embeddings_path"], 'rb') as f:
         emb_array_old, label_array_old = pickle.load(f)
         emb_array = np.concatenate(
             [emb_array_old,
@@ -330,12 +333,6 @@ if __name__ == '__main__':
         dest='classifier_path',
         help='Path to output trained classifier model')
     parser.add_argument(
-        '--embeddings-directory',
-        type=str,
-        action='store',
-        dest='embeddings_directory',
-        help='Path to previous embeddings, if any')
-    parser.add_argument(
         '--is-train',
         action='store_true',
         dest='is_train',
@@ -353,5 +350,4 @@ if __name__ == '__main__':
         num_epochs=args.num_epochs,
         min_images_per_labels=args.min_images_per_class,
         split_ratio=args.split_ratio,
-        embeddings_directory=args.embeddings_directory,
         is_train=args.is_train)

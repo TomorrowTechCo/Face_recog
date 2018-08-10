@@ -1,6 +1,6 @@
 from tkinter import filedialog, Tk, Frame, Label, PhotoImage, Button, Text
 from tkinter import Scrollbar, INSERT, END, VERTICAL
-from retrain_evaluate import evaluate_face, add_face
+from retrain_evaluate import evaluate_face, add_face, process_image
 from PIL import Image, ImageTk
 import os
 import shutil
@@ -93,7 +93,8 @@ def get_text():
     )  # variable para buscar la foto por el nombre
     buscar_foto_nombre = buscar_foto_nombre + ".png"
     print(buscar_foto_nombre)
-    validar_sujeto = print(buscar_foto_nombre in lista_imagenes)
+    validar_sujeto = buscar_foto_nombre in lista_imagenes
+    print(validar_sujeto)
     # if validar_sujeto==True:
     img_file = 'imShow/' + buscar_foto_nombre
     img_file = img_file.replace(" ", "")
@@ -190,7 +191,15 @@ btn.config(command=OpenFile)
 
 # call the preproccessing script on the pictures in the main folder.
 def preprocess():
-    process_image(askdirectory())
+    textbox.delete('1,0', END)
+    textbox.insert(INSERT, process_image(filedialog.askdirectory()))
+
+
+# call the retraining script with the pictures on the main folder as
+# the source for the new person.
+def retrain():
+    textbox.delete('1.0', END)
+    textbox.insert(INSERT, add_face(filedialog.askdirectory()))
 
 
 # boton reconocer
@@ -202,5 +211,10 @@ btn2.config(command=get_text)
 btn3 = Button(raiz, text="Pre procesar")
 btn3.place(x=262, y=494)
 btn3.config(command=preprocess)
+
+# botón reentrenar
+btn4 = Button(raiz, text="Añadir persona")
+btn4.place(x=100, y=494)
+btn4.config(command=retrain)
 
 raiz.mainloop()

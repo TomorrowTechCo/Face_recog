@@ -9,10 +9,7 @@ import docker
 import re
 import yaml
 with open("config.yaml") as f:
-    config = yaml.load(f.read())
-
-classifier_path = "/home/chava/Documents/PythonProjects/facialReco/facial_recog/output/classifier2.pkl"
-embeddings_path = "/home/chava/Documents/PythonProjects/facialReco/facial_recog/output/embeddings.pkl"
+    conf = yaml.load(f.read())
 
 
 client = docker.from_env()
@@ -24,11 +21,11 @@ def save_config(directory):
     saves the config when it is changed during the program.
     """
 
-    with open("config.yaml", 'w') as config_file:
-        conf_file = {}
-        conf_file["classifier_path"] = ''.join(directory, "classifier.pkl")
-        conf_file["embeddings_path"] = ''.join(directory, "embeddings.pkl")
-        config_file.write(yaml.dump(conf_file, default_flow_style=False))
+    with open("config.yaml", 'r+') as f:
+        conf = yaml.load(f.read())
+        conf["classifier_path"] = ''.join(directory, "classifier.pkl")
+        conf["embeddings_path"] = ''.join(directory, "embeddings.pkl")
+        f.write(yaml.dump(conf, default_flow_style=False))
 
 
 def evaluate_face(input_dir="/home/chava/Documents/PythonProjects/facialReco"
@@ -89,11 +86,13 @@ def add_face(input_dir):
         "python3 /facial_recog/facenet_reco"
         "/train_classifier.py --input-dir", directory,
         "--model-path /facial_recog/etc/20170511-185253/"
-        "20170511-185253.pb --classifier-path", classifier_path,
+        "20170511-185253.pb --classifier-path", conf["classifier_path"],
         "--num-threads 16 --num-epochs 5"
         "--min-num-images-per-class 10 --is-train"
     ])
-    client.containers.run(
+    save_config(directory)
+
+    return(client.containers.run(
         "colemurray/medium-facenet-tutorial",
         command_string,
         environment=["PYTHONPATH=$PYTHONPATH:/recoTutorial"],
@@ -103,11 +102,10 @@ def add_face(input_dir):
                 'bind': '/facial_recog',
                 'mode': 'rw'
             }
-        })
-    save_config(directory)
+        }))
 
 
-def process_image(picture="/facial_recog/temp/"):
+def process_image(picture):
     """function that takes the pictures from the main folder and preprocesses
     them.
     """
@@ -115,7 +113,7 @@ def process_image(picture="/facial_recog/temp/"):
     command_string = ' '.join([
         "python3 /facial_recog/facenet_reco/preprocess.py "
         "--input-dir", picture,
-        "--output-dir", config["pictures_path"],
+        "--output-dir", conf["preprocessing_path"],
         "--crop-dim 180"
     ])
 
@@ -124,8 +122,7 @@ def process_image(picture="/facial_recog/temp/"):
         command_string,
         environment=["PYTHONPATH=$PYTHONPATH:/recoTutorial"],
         volumes={
-            '/home/chava/Documents/PythonProjects/'
-            'facialReco/facial_recog/': {
+            'facial_recog/': {
                 'bind': '/facial_recog',
                 'mode': 'rw'
             }
