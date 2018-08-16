@@ -12,7 +12,8 @@ facenet_reco/__pycache__/*
 *.pyc
 
 # ignore config file so folders can be local
-facenet_reco/config.yaml
+# changed my mind
+# facenet_reco/config.yaml
 
 # more huge files
 lfw.tgz

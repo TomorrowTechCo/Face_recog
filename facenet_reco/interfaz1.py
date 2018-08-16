@@ -1,6 +1,7 @@
 from tkinter import filedialog, Tk, Frame, Label, PhotoImage, Button, Text
 from tkinter import Scrollbar, INSERT, END, VERTICAL
 from retrain_evaluate import evaluate_face, add_face, process_image
+from retrain_evaluate import adjust_algo
 from PIL import Image, ImageTk
 import os
 import shutil
@@ -183,24 +184,35 @@ Label(
         x=370 + coordenada_x, y=354 + coordenada_y)
 
 
-# boton cargar
-btn = Button(raiz, text="Cargar")
-btn.place(x=100, y=454)
-btn.config(command=OpenFile)
-
-
 # call the preproccessing script on the pictures in the main folder.
 def preprocess():
-    textbox.delete('1,0', END)
-    textbox.insert(INSERT, process_image(filedialog.askdirectory()))
+    textbox.delete('1.0', END)
+    output = process_image(filedialog.askdirectory())
+    textbox.insert(INSERT, output)
 
 
 # call the retraining script with the pictures on the main folder as
 # the source for the new person.
 def retrain():
     textbox.delete('1.0', END)
-    textbox.insert(INSERT, add_face(filedialog.askdirectory()))
+    output = add_face(filedialog.askdirectory())
+    textbox.insert(INSERT, output)
 
+
+# print the selected directory to shell
+def sel_dir():
+    print(filedialog.askdirectory())
+
+
+# function that ADJUSTS the whole model
+def adjust_algor():
+    print(adjust_algo(filedialog.askdirectory(initialdir="../temp")))
+
+
+# boton cargar
+btn = Button(raiz, text="Cargar")
+btn.place(x=100, y=454)
+btn.config(command=OpenFile)
 
 # boton reconocer
 btn2 = Button(raiz, text="Reconocer")
@@ -216,5 +228,10 @@ btn3.config(command=preprocess)
 btn4 = Button(raiz, text="Añadir persona")
 btn4.place(x=100, y=494)
 btn4.config(command=retrain)
+
+# botón de prueba
+btn5 = Button(raiz, text="adjust algorithm")
+btn5.place(x=100, y=534)
+btn5.config(command=adjust_algor)
 
 raiz.mainloop()

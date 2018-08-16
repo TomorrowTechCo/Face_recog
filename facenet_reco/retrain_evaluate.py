@@ -7,6 +7,7 @@
 import logging
 import docker
 import re
+import os
 import yaml
 with open("config.yaml") as f:
     conf = yaml.load(f.read())
@@ -14,6 +15,9 @@ with open("config.yaml") as f:
 
 client = docker.from_env()
 logger = logging.getLogger(__name__)
+
+# absolute path of program in host os
+dir_ls = os.getcwd().split('facial_recog')[0] + 'facial_recog/'
 
 
 def save_config(directory):
@@ -23,9 +27,15 @@ def save_config(directory):
 
     with open("config.yaml", 'r+') as f:
         conf = yaml.load(f.read())
-        conf["classifier_path"] = ''.join(directory, "classifier.pkl")
-        conf["embeddings_path"] = ''.join(directory, "embeddings.pkl")
+        conf["classifier_path"] = ''.join([directory, "classifier.pkl"])
+        conf["embeddings_path"] = ''.join([directory, "embeddings.pkl"])
         f.write(yaml.dump(conf, default_flow_style=False))
+
+
+# formats the directory nicely for Docker
+def docker_dir(abspath):
+    dir_list = abspath.split('facial_recog')[1].split('/')[1:]
+    return '/'.join(['', 'facial_recog'] + [x for x in dir_list] + [''])
 
 
 def evaluate_face(input_dir="/home/chava/Documents/PythonProjects/facialReco"
@@ -40,11 +50,11 @@ def evaluate_face(input_dir="/home/chava/Documents/PythonProjects/facialReco"
     """
     # print(input_dir)
 
-    directory = re.split("facialReco", input_dir)[1]
+    # directory = re.split("facialReco", input_dir)[1]
 
     command_string = ' '.join([
         "python3 /facial_recog/facenet_reco"
-        "/train_classifier.py --input-dir", directory,
+        "/train_classifier.py --input-dir", docker_dir(input_dir),
         "--model-path /facial_recog/etc/20170511-185253/"
         "20170511-185253.pb --classifier-path "
         "/facial_recog/output/classifier2.pkl "
@@ -80,25 +90,25 @@ def add_face(input_dir):
       this kills the model.
     """
 
-    directory = re.split("facialReco", input_dir)[1]
+    # dir_list = input_dir.split('facial_recog')[1].split('/')
+    # directory = '/'.join(['', 'facial_recog]'] + [x for x in dir_list])
 
     command_string = ' '.join([
         "python3 /facial_recog/facenet_reco"
-        "/train_classifier.py --input-dir", directory,
+        "/train_classifier.py --input-dir", docker_dir(input_dir),
         "--model-path /facial_recog/etc/20170511-185253/"
         "20170511-185253.pb --classifier-path", conf["classifier_path"],
-        "--num-threads 16 --num-epochs 5"
-        "--min-num-images-per-class 10 --is-train"
+        "--num-threads 16 --num-epochs 5 "
+        "--min-num-images-per-class 10 --is-train --is-retrain"
     ])
-    save_config(directory)
+    save_config(docker_dir(input_dir))
 
     return(client.containers.run(
         "colemurray/medium-facenet-tutorial",
         command_string,
-        environment=["PYTHONPATH=$PYTHONPATH:/recoTutorial"],
+        environment=["PYTHONPATH=$PYTHONPATH:/facial_recog"],
         volumes={
-            '/home/chava/Documents/PythonProjects/'
-            'facialReco/facial_recog/': {
+            dir_ls: {
                 'bind': '/facial_recog',
                 'mode': 'rw'
             }
@@ -110,20 +120,49 @@ def process_image(picture):
     them.
     """
 
+    print(docker_dir(picture))
+
     command_string = ' '.join([
         "python3 /facial_recog/facenet_reco/preprocess.py "
-        "--input-dir", picture,
+        "--input-dir", docker_dir(picture),
         "--output-dir", conf["preprocessing_path"],
         "--crop-dim 180"
     ])
 
-    client.containers.run(
+    return (client.containers.run(
         "colemurray/medium-facenet-tutorial",
         command_string,
-        environment=["PYTHONPATH=$PYTHONPATH:/recoTutorial"],
+        environment=["PYTHONPATH=$PYTHONPATH:/facial_recog"],
         volumes={
-            'facial_recog/': {
+            dir_ls: {
                 'bind': '/facial_recog',
                 'mode': 'rw'
             }
-        })
+        }))
+
+
+def adjust_algo(direc):
+    """
+    function that trains a new model from the pictures in the selected folder.
+    """
+
+    command_string = ' '.join([
+        "python3 /facial_recog/facenet_reco"
+        "/train_classifier.py --input-dir", docker_dir(direc),
+        "--model-path /facial_recog/etc/20170511-185253/"
+        "20170511-185253.pb --classifier-path", conf["classifier_path"],
+        "--num-threads 16 --num-epochs 5 "
+        "--min-num-images-per-class 10 --is-train"
+    ])
+    save_config(docker_dir(direc))
+
+    return(client.containers.run(
+        "colemurray/medium-facenet-tutorial",
+        command_string,
+        environment=["PYTHONPATH=$PYTHONPATH:/facial_recog"],
+        volumes={
+            dir_ls: {
+                'bind': '/facial_recog',
+                'mode': 'rw'
+            }
+        }))

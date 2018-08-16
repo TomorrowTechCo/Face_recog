@@ -9,3 +9,15 @@ $ docker run -v $PWD:/medium-facenet-tutorial \
 -e PYTHONPATH=$PYTHONPATH:/medium-facenet-tutorial \
 -it colemurray/medium-facenet-tutorial python3 /medium-facenet-tutorial/medium_facenet_tutorial/download_and_extract_model.py \
 --model-dir /medium-facenet-tutorial/etc
+
+docker run -v $PWD:/facial_recog \
+-e PYTHONPATH=$PYTHONPATH:/facial_recog \
+-it colemurray/medium-facenet-tutorial \
+python3 /facial_recog/facenet_reco/train_classifier.py \
+--input-dir /facial_recog/output/beginner2 \
+--model-path /facial_recog/etc/20170511-185253/20170511-185253.pb \
+--classifier-path /facial_recog/output/classifier3.pkl \
+--num-threads 16 \
+--num-epochs 25 \
+--min-num-images-per-class 10 \
+--is-train

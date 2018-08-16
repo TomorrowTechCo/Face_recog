@@ -14,7 +14,7 @@ from tensorflow.python.platform import gfile
 from lfw_input import filter_dataset, split_dataset, get_dataset
 from facenet_reco import lfw_input
 
-with open("config.yaml") as f:
+with open("/facial_recog/facenet_reco/config.yaml") as f:
     conf = yaml.load(f.read())
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,8 @@ def main(input_directory,
          num_epochs,
          min_images_per_labels,
          split_ratio,
-         is_train=True):
+         is_train=True,
+         is_retrain=True):
     """
     Loads images from :param input_dir, creates embeddings using a model
     defined at :param model_path, and trains
@@ -95,8 +96,13 @@ def main(input_directory,
         classifier_filename = classifier_output_path
 
         if is_train:
-            _retrain_classifier(emb_array, label_array, class_names,
-                                classifier_filename)
+            if is_retrain:
+                # _retrain_classifier(emb_array, label_array, class_names,
+                #                     classifier_filename)
+                _embedding_show()
+            else:
+                _train_and_save_classifier(emb_array, label_array,
+                                           class_names, classifier_filename)
         else:
             _evaluate_classifier(emb_array, label_array, classifier_filename)
 
@@ -173,8 +179,7 @@ def _create_embeddings(
         labels,
         images_placeholder,
         phase_train_placeholder,
-        sess,
-        embeddings_directory="/facial_recog/output/embeddings.pkl"):
+        sess):
     """
     Uses model to generate embeddings from :param images.
     :param embedding_layer:
@@ -212,7 +217,8 @@ def _create_embeddings(
 
     # pickle and store the embeddings so we can use them later
     with open(conf["embeddings_path"], 'wb') as outfile:
-        pickle.dump((emb_array, label_array), outfile)
+        pickle.dump(emb_array, outfile)
+        pickle.dump(label_array, outfile)
 
     return emb_array, label_array
 
@@ -229,18 +235,36 @@ def _train_and_save_classifier(emb_array, label_array, class_names,
         'Saved classifier model to file "%s"' % classifier_filename_exp)
 
 
+# test function to load and display old embeddings
+def _embedding_show():
+    with open(conf["embeddings_path"], 'rb') as f:
+        emb_array = pickle.load(f)
+        label_array = pickle.load(f)
+
+    print(emb_array)
+    print(label_array)
+    with open("/facial_recog/embeddings.pkl", 'wb') as f:
+        pickle.dump(emb_array, f)
+        pickle.dump(label_array, f)
+
+
 # this function takes care of the retraining. It will take the place of the
 # original, for the demo of course.
 def _retrain_classifier(emb_array, label_array, class_names,
                         classifier_filename_exp):
     with open(conf["embeddings_path"], 'rb') as f:
-        emb_array_old, label_array_old = pickle.load(f)
+        emb_array_old = pickle.load(f)
+        label_array_old = pickle.load(f)
+        print(emb_array_old)
+        print(label_array_old)
         emb_array = np.concatenate(
             [emb_array_old,
              emb_array]) if emb_array_old is not None else emb_array
         label_array = np.concatenate(
             [label_array_old,
              label_array]) if label_array_old is not None else label_array
+        print(emb_array)
+        print(label_array)
 
     logger.info('Training Classifier')
     model = SVC(kernel='linear', probability=True, verbose=False)
@@ -338,6 +362,12 @@ if __name__ == '__main__':
         dest='is_train',
         default=False,
         help='Flag to determine if train or evaluate')
+    parser.add_argument(
+        '--is-retrain',
+        action='store_true',
+        dest='is_retrain',
+        default=False,
+        help='Flag to determine if retrain or train. Useless otherwise.')
 
     args = parser.parse_args()
 
@@ -350,4 +380,5 @@ if __name__ == '__main__':
         num_epochs=args.num_epochs,
         min_images_per_labels=args.min_images_per_class,
         split_ratio=args.split_ratio,
-        is_train=args.is_train)
+        is_train=args.is_train,
+        is_retrain=args.is_retrain)
