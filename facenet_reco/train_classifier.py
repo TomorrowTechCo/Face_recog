@@ -216,9 +216,15 @@ def _create_embeddings(
         pass
 
     # pickle and store the embeddings so we can use them later
+        # trying a different solution
+        # pickle.dump(emb_array, outfile)
+        # pickle.dump(label_array, outfile)
+
     with open(conf["embeddings_path"], 'wb') as outfile:
-        pickle.dump(emb_array, outfile)
-        pickle.dump(label_array, outfile)
+        np.save(outfile, emb_array)
+
+    with open(conf["labels_path"], 'wb') as outfile:
+        np.save(outfile, label_array)
 
     return emb_array, label_array
 
@@ -238,14 +244,18 @@ def _train_and_save_classifier(emb_array, label_array, class_names,
 # test function to load and display old embeddings
 def _embedding_show():
     with open(conf["embeddings_path"], 'rb') as f:
-        emb_array = pickle.load(f)
-        label_array = pickle.load(f)
+        emb_array = np.load(f)
+
+    with open(conf["labels_path"], 'rb') as f:
+        label_array = np.load(f)
 
     print(emb_array)
     print(label_array)
-    with open("/facial_recog/embeddings.pkl", 'wb') as f:
-        pickle.dump(emb_array, f)
-        pickle.dump(label_array, f)
+    with open("/facial_recog/embeddings.npy", 'wb') as f:
+        np.dump(emb_array, f)
+
+    with open("/facial_recog/labels.npy", 'wb') as f:
+        np.dump(label_array, f)
 
 
 # this function takes care of the retraining. It will take the place of the
@@ -253,18 +263,21 @@ def _embedding_show():
 def _retrain_classifier(emb_array, label_array, class_names,
                         classifier_filename_exp):
     with open(conf["embeddings_path"], 'rb') as f:
-        emb_array_old = pickle.load(f)
-        label_array_old = pickle.load(f)
-        print(emb_array_old)
-        print(label_array_old)
-        emb_array = np.concatenate(
-            [emb_array_old,
-             emb_array]) if emb_array_old is not None else emb_array
-        label_array = np.concatenate(
-            [label_array_old,
-             label_array]) if label_array_old is not None else label_array
-        print(emb_array)
-        print(label_array)
+        emb_array_old = np.load(f)
+
+    with open(conf["labels_path"], 'rb') as f:
+        label_array_old = np.load(f)
+
+    print(emb_array_old)
+    print(label_array_old)
+    emb_array = np.concatenate(
+        [emb_array_old,
+         emb_array]) if emb_array_old is not None else emb_array
+    label_array = np.concatenate(
+        [label_array_old,
+         label_array]) if label_array_old is not None else label_array
+    print(emb_array)
+    print(label_array)
 
     logger.info('Training Classifier')
     model = SVC(kernel='linear', probability=True, verbose=False)

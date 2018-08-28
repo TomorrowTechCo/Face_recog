@@ -6,7 +6,7 @@
 # thus it will host three main function calls.
 import logging
 import docker
-import re
+# import re
 import os
 import yaml
 with open("config.yaml") as f:
@@ -29,6 +29,7 @@ def save_config(directory):
         conf = yaml.load(f.read())
         conf["classifier_path"] = ''.join([directory, "classifier.pkl"])
         conf["embeddings_path"] = ''.join([directory, "embeddings.pkl"])
+        f.truncate()
         f.write(yaml.dump(conf, default_flow_style=False))
 
 
@@ -38,8 +39,7 @@ def docker_dir(abspath):
     return '/'.join(['', 'facial_recog'] + [x for x in dir_list] + [''])
 
 
-def evaluate_face(input_dir="/home/chava/Documents/PythonProjects/facialReco"
-                  "/facial_recog/temp/"):
+def evaluate_face(input_dir=dir_ls):
     """
     function that recognizes the face on a picture.
     input: location of the picture. (str)
@@ -67,8 +67,7 @@ def evaluate_face(input_dir="/home/chava/Documents/PythonProjects/facialReco"
         command_string,
         environment=["PYTHONPATH=$PYTHONPATH:/facial_recog"],
         volumes={
-            '/home/chava/Documents/PythonProjects/'
-            'facialReco/facial_recog/': {
+            dir_ls: {
                 'bind': '/facial_recog',
                 'mode': 'rw'
             }
