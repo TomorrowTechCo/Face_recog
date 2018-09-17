@@ -14,9 +14,9 @@ docker run -v $PWD:/facial_recog \
 -e PYTHONPATH=$PYTHONPATH:/facial_recog \
 -it colemurray/medium-facenet-tutorial \
 python3 /facial_recog/facenet_reco/train_classifier.py \
---input-dir /facial_recog/output/beginner2 \
+--input-dir /facial_recog/temp/ \
 --model-path /facial_recog/etc/20170511-185253/20170511-185253.pb \
---classifier-path /facial_recog/output/classifier3.pkl \
+--classifier-path /facial_recog/output/classifier.pkl \
 --num-threads 16 \
 --num-epochs 25 \
 --min-num-images-per-class 10 \

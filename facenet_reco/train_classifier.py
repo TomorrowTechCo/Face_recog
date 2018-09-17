@@ -97,9 +97,9 @@ def main(input_directory,
 
         if is_train:
             if is_retrain:
-                # _retrain_classifier(emb_array, label_array, class_names,
-                #                     classifier_filename)
-                _embedding_show()
+                _retrain_classifier(emb_array, label_array, class_names,
+                                    classifier_filename)
+                # _embedding_show()
             else:
                 _train_and_save_classifier(emb_array, label_array,
                                            class_names, classifier_filename)
@@ -155,6 +155,13 @@ def _load_images_and_labels(dataset,
     return images, labels, class_names
 
 
+# function that preprocesses the input image, then feeds it into the model.
+def _preprocess_image(images):
+
+    pass
+    # placeholder
+
+
 def _load_model(model_filepath):
     """
     Load frozen protobuf graph
@@ -192,6 +199,7 @@ def _create_embeddings(
     """
     emb_array = None
     label_array = None
+    print(images)
     try:
         i = 0
         while True:
@@ -215,22 +223,24 @@ def _create_embeddings(
     except tf.errors.OutOfRangeError:
         pass
 
-    # pickle and store the embeddings so we can use them later
-        # trying a different solution
-        # pickle.dump(emb_array, outfile)
-        # pickle.dump(label_array, outfile)
-
-    with open(conf["embeddings_path"], 'wb') as outfile:
-        np.save(outfile, emb_array)
-
-    with open(conf["labels_path"], 'wb') as outfile:
-        np.save(outfile, label_array)
-
     return emb_array, label_array
 
 
 def _train_and_save_classifier(emb_array, label_array, class_names,
                                classifier_filename_exp):
+
+    # save the generated embeddings
+    with open("/facial_recog/output/embeddings.npy", 'wb') as outfile:
+        print(outfile)
+        np.save(outfile, emb_array)
+
+    with open("/facial_recog/output/labels.npy", 'wb') as outfile:
+        print(outfile)
+        np.save(outfile, label_array)
+
+        logging.info(
+            'Saved embeddings to file "%s"' % "embeddings.npy")
+
     logger.info('Training Classifier')
     model = SVC(kernel='linear', probability=True, verbose=False)
     model.fit(emb_array, label_array)
@@ -241,31 +251,14 @@ def _train_and_save_classifier(emb_array, label_array, class_names,
         'Saved classifier model to file "%s"' % classifier_filename_exp)
 
 
-# test function to load and display old embeddings
-def _embedding_show():
-    with open(conf["embeddings_path"], 'rb') as f:
-        emb_array = np.load(f)
-
-    with open(conf["labels_path"], 'rb') as f:
-        label_array = np.load(f)
-
-    print(emb_array)
-    print(label_array)
-    with open("/facial_recog/embeddings.npy", 'wb') as f:
-        np.dump(emb_array, f)
-
-    with open("/facial_recog/labels.npy", 'wb') as f:
-        np.dump(label_array, f)
-
-
 # this function takes care of the retraining. It will take the place of the
 # original, for the demo of course.
 def _retrain_classifier(emb_array, label_array, class_names,
                         classifier_filename_exp):
-    with open(conf["embeddings_path"], 'rb') as f:
+    with open("/facial_recog/output/embeddings.npy", 'rb') as f:
         emb_array_old = np.load(f)
 
-    with open(conf["labels_path"], 'rb') as f:
+    with open("/facial_recog/output/labels.npy", 'rb') as f:
         label_array_old = np.load(f)
 
     print(emb_array_old)
@@ -287,6 +280,13 @@ def _retrain_classifier(emb_array, label_array, class_names,
         pickle.dump((model, class_names), outfile)
     logging.info(
         'Saved classifier model to file "%s"' % classifier_filename_exp)
+
+    # save the embeddings and labels for later
+    with open("/facial_recog/output/embeddings.npy", 'wb') as f:
+        emb_array.dump(f)
+
+    with open("/facial_recog/output/labels.npy", 'wb') as f:
+        label_array.dump(f)
 
 
 def _evaluate_classifier(emb_array, label_array, classifier_filename,

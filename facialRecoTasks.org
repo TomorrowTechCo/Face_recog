@@ -6,5 +6,13 @@ In this file, I collect the tasks I am yet to do on the facial recognition demo.
   + take their arguments from the function call in the interface
   + chain them together in one string
   + send the docker call
-* 
+* wow
+  barely used this file before. Oh well. Here's what I need to do:
+** organize GUI buttons in three:
+*** evaluate (duh)
+*** add face through existing photos
+*** add face through camera
+** find out budget of centro de valoración probatoria
+** fix underlying database
+*** single "classifier.pkl", "embeddings.npy" and "labels.npy" please
 

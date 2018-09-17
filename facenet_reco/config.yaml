@@ -1,12 +1,6 @@
-classifier_path: "/facial_recog/output/classifier4.pkl"
-embeddings_path: "/facial_recog/output/embeddings3.npy"
-labels_path: "/facial_recog/output/labels.npy"
-preprocessing_path: "/facial_recog/output/beginner/"
-images_dir: "/facial_recog/temp/sujeto"
-lista_imagenes: "imShow/"
-classifier_path: /facial_recog/temp/classifier.pkl
-embeddings_path: /facial_recog/temp/embeddings.pkl
-images_dir: /facial_recog/temp/sujeto
+classifier_path: /facial_recog/output/classifier.pkl
+embeddings_path: /facial_recog/output/embeddings.npy
+images_dir: ../temp/sujeto
 labels_path: /facial_recog/output/labels.npy
 lista_imagenes: imShow/
 preprocessing_path: /facial_recog/output/beginner/

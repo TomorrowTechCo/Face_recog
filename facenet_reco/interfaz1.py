@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 import os
 import shutil
 import yaml
+import cv2
 
 global coordenada_x
 coordenada_x = 0
@@ -19,13 +20,11 @@ with open("config.yaml") as f:
     conf = yaml.load(f.read())
 
 # Se obtiene el nombre de todas las fotos de la carpeta imShow
-lista_imagenes = os.listdir(
-    conf["lista_imagenes"])
+lista_imagenes = os.listdir(conf["lista_imagenes"])
 
 # se elimina el case sensitive
 for i in range(len(lista_imagenes)):
-    lista_imagenes[i] = lista_imagenes[
-        i].lower()
+    lista_imagenes[i] = lista_imagenes[i].lower()
 
 # print(lista_imagenes)
 
@@ -41,26 +40,17 @@ def OpenFile():
     textbox.delete('1.0', END)
 
     # se valida si existe el directorio (no sirve si no se borran las fotos)
-    validar = (
-        os.path.isdir(conf['images_dir'])
-    )
-    if validar:
+    if os.path.isdir(conf['images_dir']):
         # Se elimina el directorio
-        shutil.rmtree(
-            conf['images_dir']
-        )
-    a = os.getcwd()
-    print(a)
-    name = filedialog.askopenfilename(
-        initialdir="../output/intermediate"
-    )
+        shutil.rmtree(conf['images_dir'])
+    print(os.getcwd())
+    name = filedialog.askopenfilename(initialdir="../output/intermediate")
 
     # se abre el directorio para seleccionar la foto a reconocer, la variable
     # name corresponde a todo el path con la imagen print(name)
     # se obtiene el nombre de la foto
     photo_name = name.split("/")[-1]
-    if not os.path.isdir(conf['images_dir']):
-        os.makedirs(conf['images_dir'])
+    os.makedirs(conf['images_dir'])
 
     shutil.copy(name, conf['images_dir'])
 
@@ -75,48 +65,52 @@ def get_text():
     textbox.insert(INSERT, evaluate_face())
     texto = textbox.get("1.0", END + "-2c")  # Se obtiene el texto del textbox
     texto_espaciosV = texto.split("\n")
+    print(texto_espaciosV)
     # Se separa en un arreglo teniendo en cuenta los saltos de línea (la V
     # indica que es arreglo)
-    texto_nombre_esp = texto_espaciosV[0]
+    texto_nombre_esp = texto_espaciosV[2]
+    print(texto_nombre_esp)
     texto_nombre_puntosV = texto_nombre_esp.split(
         "="
     )  # se separa por igual para obtener el resto (la primera parte es un
     # numero)
+    print(texto_nombre_puntosV)
     texto_nombre_puntos = texto_nombre_puntosV[
         1]  # se obtiene el nombrey el accurracy separado por puntos y espacios
+    print(texto_nombre_puntos)
     # print(texto_nombre_puntos)
     nombre_sin_puntoV = texto_nombre_puntos.split(
         ":")  # se separa por puntos para obtener el nombre y la probabilidad
+    print(nombre_sin_puntoV)
     nombre_sin_guion = nombre_sin_puntoV[0]
-    nombre_sin_guion_sp = nombre_sin_guion.split("_")
     print(nombre_sin_guion)
+    nombre_sin_guion_sp = nombre_sin_guion.split("_")
+    print(nombre_sin_guion_sp)
     buscar_foto_nombre = nombre_sin_guion.lower(
     )  # variable para buscar la foto por el nombre
+    print(buscar_foto_nombre)
     buscar_foto_nombre = buscar_foto_nombre + ".png"
     print(buscar_foto_nombre)
     validar_sujeto = buscar_foto_nombre in lista_imagenes
     print(validar_sujeto)
     # if validar_sujeto==True:
     img_file = 'imShow/' + buscar_foto_nombre
+    print(img_file)
     img_file = img_file.replace(" ", "")
     face_delete.config(image="")
     foto_actual = PhotoImage(file=img_file)
     label = Label(miFrame, image=foto_actual)
     label.image = foto_actual
     label.place(x=100, y=200)
-    nombre_sin_guion1 = nombre_sin_guion_sp[0]
-    nombre_sin_guion2 = nombre_sin_guion_sp[1]
-    espacio = " "
-    nombreSujeto = nombre_sin_guion1 + espacio + nombre_sin_guion2
+    nombreSujeto = nombre_sin_guion_sp[0] + " " + nombre_sin_guion_sp[1]
     # Aqui empieza la obtencion de la probabilidad
     probabilidad = nombre_sin_puntoV[1]
 
-    textbox_nombre.configure(
-        state='normal'
-    )  # se debe settear como normal para poder borrar el contenido anterior
+    textbox_nombre.configure(state='normal')
+    # se debe settear como normal para poder borrar el contenido anterior
     textbox_probabilidad.configure(state='normal')
-    textbox_nombre.delete(
-        '1.0', END)  # se borra el contenido anterior en caso de haberlo
+    textbox_nombre.delete('1.0', END)
+    # se borra el contenido anterior en caso de haberlo
     textbox_probabilidad.delete('1.0', END)
     textbox_nombre.insert(INSERT, nombreSujeto)  # se inserta el nombre
     textbox_probabilidad.insert(INSERT, probabilidad)
@@ -195,8 +189,31 @@ def preprocess():
 # the source for the new person.
 def retrain():
     textbox.delete('1.0', END)
-    output = add_face(filedialog.askdirectory())
-    textbox.insert(INSERT, output)
+    webcam = cv2.VideoCapture(-1)
+    classifier = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    while True:
+        (rval, im) = webcam.read()
+        im = cv2.flip(im, 1, 0)  # Flip to act as a mirror
+        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+        faces = classifier.detectMultiScale(gray, 1.3, 5)
+        for (x, y, w, h) in faces:
+            cv2.rectangle(im, (x, y), (x + w, y + h), (255, 0, 0),
+                          2)  # x+w y y+h
+            roi_gray = gray[y:y + h, x:x + w]
+            roi_color = im[y:y + h, x:x + w]
+            sub_face = im[y:y + h, x:x + w]
+            FaceFileName = "nuevacara/face_" + str(y) + ".jpg"
+            res = cv2.resize(
+                sub_face, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+            cv2.imwrite(FaceFileName, res)
+        cv2.imshow('Capturar', im)
+        key = cv2.waitKey(10)
+        # if Esc key is press then break out of the loop
+        if key == 27:  # The Esc key
+            break
+    webcam.release()
+    cv2.destroyAllWindows()
+    textbox.insert(INSERT, add_face(filedialog.askdirectory()))
 
 
 # print the selected directory to shell

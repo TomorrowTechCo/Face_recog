@@ -28,14 +28,15 @@ def save_config(directory):
     with open("config.yaml", 'r+') as f:
         conf = yaml.load(f.read())
         conf["classifier_path"] = ''.join([directory, "classifier.pkl"])
-        conf["embeddings_path"] = ''.join([directory, "embeddings.pkl"])
+        conf["embeddings_path"] = ''.join([directory, "embeddings.npy"])
         f.truncate()
+        f.flush()
         f.write(yaml.dump(conf, default_flow_style=False))
 
 
 # formats the directory nicely for Docker
 def docker_dir(abspath):
-    dir_list = abspath.split('facial_recog')[1].split('/')[1:]
+    dir_list = abspath.split('facial_recog')[0].split('/')[1:]
     return '/'.join(['', 'facial_recog'] + [x for x in dir_list] + [''])
 
 
@@ -54,10 +55,10 @@ def evaluate_face(input_dir=dir_ls):
 
     command_string = ' '.join([
         "python3 /facial_recog/facenet_reco"
-        "/train_classifier.py --input-dir", docker_dir(input_dir),
+        "/train_classifier.py --input-dir", "/facial_recog/temp/",
         "--model-path /facial_recog/etc/20170511-185253/"
         "20170511-185253.pb --classifier-path "
-        "/facial_recog/output/classifier2.pkl "
+        "/facial_recog/output/classifier.pkl "
         "--num-threads 16 --num-epochs 5 "
         "--min-num-images-per-class 1"
     ])
@@ -100,7 +101,7 @@ def add_face(input_dir):
         "--num-threads 16 --num-epochs 5 "
         "--min-num-images-per-class 10 --is-train --is-retrain"
     ])
-    save_config(docker_dir(input_dir))
+    # save_config(docker_dir(input_dir))
 
     return(client.containers.run(
         "colemurray/medium-facenet-tutorial",
@@ -153,7 +154,7 @@ def adjust_algo(direc):
         "--num-threads 16 --num-epochs 5 "
         "--min-num-images-per-class 10 --is-train"
     ])
-    save_config(docker_dir(direc))
+    # save_config(docker_dir(direc))
 
     return(client.containers.run(
         "colemurray/medium-facenet-tutorial",
