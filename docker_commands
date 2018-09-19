@@ -20,4 +20,5 @@ python3 /facial_recog/facenet_reco/train_classifier.py \
 --num-threads 16 \
 --num-epochs 25 \
 --min-num-images-per-class 10 \
---is-train
+--is-train \
+--is-retrain

@@ -1,8 +1,6 @@
 from tkinter import filedialog, Tk, Frame, Label, PhotoImage, Button, Text
-from tkinter import Scrollbar, INSERT, END, VERTICAL
+from tkinter import INSERT, END
 from retrain_evaluate import evaluate_face, add_face, process_image
-from retrain_evaluate import adjust_algo
-from PIL import Image, ImageTk
 import os
 import shutil
 import yaml
@@ -15,6 +13,8 @@ coordenada_y = 40
 global foto_actual
 global lista_imagenes
 global texto
+
+ROOT_DIR = os.getcwd().split("facial_recog")[0]
 
 with open("config.yaml") as f:
     conf = yaml.load(f.read())
@@ -43,7 +43,6 @@ def OpenFile():
     if os.path.isdir(conf['images_dir']):
         # Se elimina el directorio
         shutil.rmtree(conf['images_dir'])
-    print(os.getcwd())
     name = filedialog.askopenfilename(initialdir="../output/intermediate")
 
     # se abre el directorio para seleccionar la foto a reconocer, la variable
@@ -52,12 +51,26 @@ def OpenFile():
     photo_name = name.split("/")[-1]
     os.makedirs(conf['images_dir'])
 
-    shutil.copy(name, conf['images_dir'])
+    # guardar la foto en una carpeta provisionalmente
+    shutil.copy(name, ROOT_DIR + conf['prov_img'])
+
+    # mientras se preprocesa
+    process_image(conf['prov_folder'])
+
+    # y ahora sí se guarda en la carpeta definitiva
+    shutil.copy(ROOT_DIR + conf['prov_img'] + photo_name,
+                ROOT_DIR + conf['images_dir_prov'])
 
 
 miFrame = Frame()
 miFrame.pack()
 
+# simple window to add number of existing classes
+existing_classes = Text(raiz, height=1, width=20)
+existing_classes.place(x=450 + coordenada_x, y=150)
+Label(
+    raiz, text=" num sujetos: ", font="30").place(
+        x=300 + coordenada_x, y=110 + coordenada_y)
 
 # Funcion para adquirir el texto de la informacion de la persona, esta se
 # activa dentro de la funcion provFunc
@@ -69,33 +82,21 @@ def get_text():
     # Se separa en un arreglo teniendo en cuenta los saltos de línea (la V
     # indica que es arreglo)
     texto_nombre_esp = texto_espaciosV[2]
-    print(texto_nombre_esp)
     texto_nombre_puntosV = texto_nombre_esp.split(
         "="
     )  # se separa por igual para obtener el resto (la primera parte es un
     # numero)
-    print(texto_nombre_puntosV)
     texto_nombre_puntos = texto_nombre_puntosV[
         1]  # se obtiene el nombrey el accurracy separado por puntos y espacios
-    print(texto_nombre_puntos)
     # print(texto_nombre_puntos)
     nombre_sin_puntoV = texto_nombre_puntos.split(
         ":")  # se separa por puntos para obtener el nombre y la probabilidad
-    print(nombre_sin_puntoV)
     nombre_sin_guion = nombre_sin_puntoV[0]
-    print(nombre_sin_guion)
     nombre_sin_guion_sp = nombre_sin_guion.split("_")
-    print(nombre_sin_guion_sp)
     buscar_foto_nombre = nombre_sin_guion.lower(
     )  # variable para buscar la foto por el nombre
-    print(buscar_foto_nombre)
     buscar_foto_nombre = buscar_foto_nombre + ".png"
-    print(buscar_foto_nombre)
-    validar_sujeto = buscar_foto_nombre in lista_imagenes
-    print(validar_sujeto)
-    # if validar_sujeto==True:
     img_file = 'imShow/' + buscar_foto_nombre
-    print(img_file)
     img_file = img_file.replace(" ", "")
     face_delete.config(image="")
     foto_actual = PhotoImage(file=img_file)
@@ -117,9 +118,6 @@ def get_text():
     textbox_nombre.configure(
         state='disabled')  # el boton se vuelve a settear para no ser editado
     textbox_probabilidad.configure(state='disabled')
-    # textbos imagen
-
-    # print(prob_sin_puntos)
 
 
 # imagen de fondo en el frame (si el frame no se pone primero lo demás no
@@ -178,16 +176,9 @@ Label(
         x=370 + coordenada_x, y=354 + coordenada_y)
 
 
-# call the preproccessing script on the pictures in the main folder.
-def preprocess():
-    textbox.delete('1.0', END)
-    output = process_image(filedialog.askdirectory())
-    textbox.insert(INSERT, output)
-
-
 # call the retraining script with the pictures on the main folder as
 # the source for the new person.
-def retrain():
+def retrain_new():
     textbox.delete('1.0', END)
     webcam = cv2.VideoCapture(-1)
     classifier = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -213,17 +204,13 @@ def retrain():
             break
     webcam.release()
     cv2.destroyAllWindows()
-    textbox.insert(INSERT, add_face(filedialog.askdirectory()))
+    textbox.insert(INSERT, add_face(filedialog.askdirectory(),
+                                    existing_classes.get("1.0", END))
 
 
-# print the selected directory to shell
-def sel_dir():
-    print(filedialog.askdirectory())
-
-
-# function that ADJUSTS the whole model
-def adjust_algor():
-    print(adjust_algo(filedialog.askdirectory(initialdir="../temp")))
+# add a person from existing images to the model.
+def retrain_old():
+    add_face(filedialog.askdirectory())
 
 
 # boton cargar
@@ -237,18 +224,13 @@ btn2.place(x=262, y=454)
 btn2.config(command=get_text)
 
 # boton pre procesar
-btn3 = Button(raiz, text="Pre procesar")
+btn3 = Button(raiz, text="Añadir persona")
 btn3.place(x=262, y=494)
-btn3.config(command=preprocess)
+btn3.config(command=retrain_old)
 
 # botón reentrenar
-btn4 = Button(raiz, text="Añadir persona")
+btn4 = Button(raiz, text="Añadir fotos de sujeto")
 btn4.place(x=100, y=494)
-btn4.config(command=retrain)
-
-# botón de prueba
-btn5 = Button(raiz, text="adjust algorithm")
-btn5.place(x=100, y=534)
-btn5.config(command=adjust_algor)
+btn4.config(command=retrain_new)
 
 raiz.mainloop()

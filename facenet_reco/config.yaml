@@ -1,6 +1,9 @@
 classifier_path: /facial_recog/output/classifier.pkl
 embeddings_path: /facial_recog/output/embeddings.npy
 images_dir: ../temp/sujeto
+images_dir_prov: /facial_recog/temp/sujeto
 labels_path: /facial_recog/output/labels.npy
 lista_imagenes: imShow/
 preprocessing_path: /facial_recog/output/beginner/
+prov_img: /facial_recog/temp/preprocessing/postprocessing/
+prov_folder: /facial_recog/temp/preprocessing/

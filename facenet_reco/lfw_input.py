@@ -8,8 +8,9 @@ from tensorflow.python.framework import ops
 logger = logging.getLogger(__name__)
 
 
-def read_data(image_paths, label_list, image_size, batch_size, max_nrof_epochs, num_threads, shuffle, random_flip,
-              random_brightness, random_contrast):
+def read_data(image_paths, label_list, image_size, batch_size, max_nrof_epochs,
+              num_threads, shuffle, random_flip, random_brightness,
+              random_contrast):
     """
     Creates Tensorflow Queue to batch load images. Applies transformations to images as they are loaded.
     :param random_brightness: 
@@ -77,12 +78,12 @@ def read_image_from_disk(filename_to_label_tuple):
     return example, label
 
 
-def get_image_paths_and_labels(dataset):
+def get_image_paths_and_labels(dataset, start_labels):
     image_paths_flat = []
     labels_flat = []
     for i in range(int(len(dataset))):
         image_paths_flat += dataset[i].image_paths
-        labels_flat += [i] * len(dataset[i].image_paths)
+        labels_flat += [i] * len(dataset[i].image_paths) + start_labels
     return image_paths_flat, labels_flat
 
 

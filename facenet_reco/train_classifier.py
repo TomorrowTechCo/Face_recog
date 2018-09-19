@@ -28,6 +28,7 @@ def main(input_directory,
          num_epochs,
          min_images_per_labels,
          split_ratio,
+         existing_subjects,
          is_train=True,
          is_retrain=True):
     """
@@ -58,6 +59,7 @@ def main(input_directory,
                 batch_size=batch_size,
                 num_threads=num_threads,
                 num_epochs=num_epochs,
+                existing_subjects=existing_subjects,
                 random_flip=True,
                 random_brightness=True,
                 random_contrast=True)
@@ -136,11 +138,13 @@ def _load_images_and_labels(dataset,
                             batch_size,
                             num_threads,
                             num_epochs,
+                            existing_subjets,
                             random_flip=False,
                             random_brightness=False,
-                            random_contrast=False):
+                            random_contrast=False,
+                            ):
     class_names = [cls.name for cls in dataset]
-    image_paths, labels = lfw_input.get_image_paths_and_labels(dataset)
+    image_paths, labels = lfw_input.get_image_paths_and_labels(dataset, )
     images, labels = lfw_input.read_data(
         image_paths,
         labels,
@@ -370,6 +374,12 @@ if __name__ == '__main__':
         dest='classifier_path',
         help='Path to output trained classifier model')
     parser.add_argument(
+        '--existing-subjects',
+        type=int,
+        action='store',
+        dest='existing_subjects',
+        help='denotes how many are there in the existing model.')
+    parser.add_argument(
         '--is-train',
         action='store_true',
         dest='is_train',
@@ -393,5 +403,6 @@ if __name__ == '__main__':
         num_epochs=args.num_epochs,
         min_images_per_labels=args.min_images_per_class,
         split_ratio=args.split_ratio,
+        existing_subjects=args.existing_subjects,
         is_train=args.is_train,
         is_retrain=args.is_retrain)

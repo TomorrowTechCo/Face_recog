@@ -75,7 +75,7 @@ def evaluate_face(input_dir=dir_ls):
         }))
 
 
-def add_face(input_dir):
+def add_face(input_dir, existing_subjects):
     """
     function that retrains the model to add a new face.
     input: location of the images. (str)
@@ -99,6 +99,7 @@ def add_face(input_dir):
         "--model-path /facial_recog/etc/20170511-185253/"
         "20170511-185253.pb --classifier-path", conf["classifier_path"],
         "--num-threads 16 --num-epochs 5 "
+        "--existing-subjects", existing_subjects,
         "--min-num-images-per-class 10 --is-train --is-retrain"
     ])
     # save_config(docker_dir(input_dir))
@@ -125,7 +126,7 @@ def process_image(picture):
     command_string = ' '.join([
         "python3 /facial_recog/facenet_reco/preprocess.py "
         "--input-dir", docker_dir(picture),
-        "--output-dir", conf["preprocessing_path"],
+        "--output-dir", conf["prov_img"],
         "--crop-dim 180"
     ])
 
